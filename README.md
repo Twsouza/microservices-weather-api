@@ -4,6 +4,7 @@ This project implements a system to retrieve temperature data by CEP (Brazilian 
 
 ## Overview
 
+- **Service A**: Accepts a CEP via POST, validates the input, and forwards valid requests to Service B.
 - **Service B**: Retrieves the city for a given CEP using the viaCEP API, fetches temperature data using the WeatherAPI, and returns the data in Celsius, Fahrenheit, and Kelvin.
 
 ## Requirements
@@ -11,6 +12,16 @@ This project implements a system to retrieve temperature data by CEP (Brazilian 
 - A valid WeatherAPI key ([get it here](https://www.weatherapi.com/))
 
 ## API Responses
+
+### Service A
+
+- **Invalid CEP (format)**:
+  - HTTP Status: `422`
+  - Response: `invalid zipcode`
+
+- **Forward to Service B**:
+  - HTTP Status: `200`
+  - Response: Depends on Service B.
 
 ### Service B
 

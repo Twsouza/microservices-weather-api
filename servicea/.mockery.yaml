@@ -1,0 +1,8 @@
+with-expecter: true
+packages:
+    servicea/internal/services:
+        config:
+            dir: mocks/services
+        interfaces:
+            WeatherApiService:
+            ZipCodeService:
