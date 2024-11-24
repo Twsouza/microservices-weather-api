@@ -1,0 +1,8 @@
+with-expecter: true
+packages:
+    serviceb/internal/services:
+        config:
+            dir: mocks/services
+        interfaces:
+            WeatherService:
+            ZipCodeService:
