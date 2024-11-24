@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,12 +9,15 @@ import (
 	"net/http"
 	"net/url"
 	"servicea/internal/dto"
+	"servicea/tracer"
+	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const (
-	weatherApiServiceTimeout = 5
+	weatherApiServiceTimeout = 1 * time.Second
 )
 
 var (
@@ -25,7 +29,7 @@ var (
 type (
 	WeatherApiService interface {
 		// GetTemperaturesByZipCode fetches the celcius, fahrenheit and kelvin temperatures for a given ZIP code.
-		GetTemperaturesByZipCode(zipCode string) (*dto.WeatherResponse, error)
+		GetTemperaturesByZipCode(ctx context.Context, zipCode string) (*dto.WeatherResponse, error)
 	}
 	WeatherAPIService struct {
 		apiServiceURL string
@@ -36,11 +40,17 @@ type (
 func NewWeatherAPIService(apiServiceURL string) WeatherApiService {
 	return &WeatherAPIService{
 		apiServiceURL: apiServiceURL,
-		httpClient:    &http.Client{Timeout: weatherApiServiceTimeout}, // Initialize httpClient
+		httpClient: &http.Client{
+			Timeout:   weatherApiServiceTimeout,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 	}
 }
 
-func (w *WeatherAPIService) GetTemperaturesByZipCode(zipCode string) (*dto.WeatherResponse, error) {
+func (w *WeatherAPIService) GetTemperaturesByZipCode(ctx context.Context, zipCode string) (*dto.WeatherResponse, error) {
+	_, span := tracer.Tracer.Start(ctx, "WeatherAPIService.GetTemperaturesByZipCode")
+	defer span.End()
+
 	client := w.httpClient
 	endpoint, err := url.Parse(w.apiServiceURL)
 	if err != nil {
@@ -55,7 +65,8 @@ func (w *WeatherAPIService) GetTemperaturesByZipCode(zipCode string) (*dto.Weath
 		"endpoint": endpoint.String(),
 	}).Info("fetching temperature data ", zipCode)
 
-	resp, err := client.Get(endpoint.String())
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("GetTemperaturesByZipCode error fetching data: %w", err)
 	}

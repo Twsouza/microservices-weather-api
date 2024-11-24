@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,9 +23,9 @@ func TestServeHTTP(t *testing.T) {
 			TempF: 77,
 			TempK: 298.15,
 		}
-		mockAPI.EXPECT().GetTemperaturesByZipCode("12345678").Return(expectedRes, nil)
+		mockAPI.EXPECT().GetTemperaturesByZipCode(mock.Anything, "12345678").Return(expectedRes, nil)
 		mockZip := mockServices.NewMockZipCodeService(t)
-		mockZip.EXPECT().IsValidCEP("12345678").Return(true)
+		mockZip.EXPECT().IsValidCEP(mock.Anything, "12345678").Return(true)
 
 		w := httptest.NewRecorder()
 		r, err := http.NewRequest(http.MethodPost, "", strings.NewReader(`{"cep": "12345678"}`))
@@ -43,7 +44,7 @@ func TestServeHTTP(t *testing.T) {
 	t.Run("Invalid CEP", func(t *testing.T) {
 		mockAPI := mockServices.NewMockWeatherApiService(t)
 		mockZip := mockServices.NewMockZipCodeService(t)
-		mockZip.EXPECT().IsValidCEP("invalid").Return(false)
+		mockZip.EXPECT().IsValidCEP(mock.Anything, "invalid").Return(false)
 
 		w := httptest.NewRecorder()
 		r, err := http.NewRequest(http.MethodPost, "", strings.NewReader(`{"cep": "invalid"}`))
@@ -73,9 +74,9 @@ func TestServeHTTP(t *testing.T) {
 
 	t.Run("Weather Service Invalid ZipCode", func(t *testing.T) {
 		mockAPI := mockServices.NewMockWeatherApiService(t)
-		mockAPI.EXPECT().GetTemperaturesByZipCode("invalidzip").Return(nil, services.InvalidZipCode)
+		mockAPI.EXPECT().GetTemperaturesByZipCode(mock.Anything, "invalidzip").Return(nil, services.InvalidZipCode)
 		mockZip := mockServices.NewMockZipCodeService(t)
-		mockZip.EXPECT().IsValidCEP("invalidzip").Return(true)
+		mockZip.EXPECT().IsValidCEP(mock.Anything, "invalidzip").Return(true)
 
 		w := httptest.NewRecorder()
 		r, err := http.NewRequest(http.MethodPost, "", strings.NewReader(`{"cep": "invalidzip"}`))
@@ -93,9 +94,9 @@ func TestServeHTTP(t *testing.T) {
 
 	t.Run("ZipCode Not Found", func(t *testing.T) {
 		mockAPI := mockServices.NewMockWeatherApiService(t)
-		mockAPI.EXPECT().GetTemperaturesByZipCode("99999999").Return(nil, services.ZipCodeNotFound)
+		mockAPI.EXPECT().GetTemperaturesByZipCode(mock.Anything, "99999999").Return(nil, services.ZipCodeNotFound)
 		mockZip := mockServices.NewMockZipCodeService(t)
-		mockZip.EXPECT().IsValidCEP("99999999").Return(true)
+		mockZip.EXPECT().IsValidCEP(mock.Anything, "99999999").Return(true)
 
 		w := httptest.NewRecorder()
 		r, err := http.NewRequest(http.MethodPost, "", strings.NewReader(`{"cep": "99999999"}`))
@@ -113,9 +114,9 @@ func TestServeHTTP(t *testing.T) {
 
 	t.Run("Internal Server Error", func(t *testing.T) {
 		mockAPI := mockServices.NewMockWeatherApiService(t)
-		mockAPI.EXPECT().GetTemperaturesByZipCode("12345678").Return(nil, errors.New("some internal error"))
+		mockAPI.EXPECT().GetTemperaturesByZipCode(mock.Anything, "12345678").Return(nil, errors.New("some internal error"))
 		mockZip := mockServices.NewMockZipCodeService(t)
-		mockZip.EXPECT().IsValidCEP("12345678").Return(true)
+		mockZip.EXPECT().IsValidCEP(mock.Anything, "12345678").Return(true)
 
 		w := httptest.NewRecorder()
 		r, err := http.NewRequest(http.MethodPost, "", strings.NewReader(`{"cep": "12345678"}`))

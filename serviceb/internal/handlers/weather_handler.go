@@ -7,6 +7,7 @@ import (
 
 	"serviceb/internal/dto"
 	"serviceb/internal/services"
+	"serviceb/tracer"
 
 	"github.com/sirupsen/logrus"
 )
@@ -19,8 +20,11 @@ type WeatherHandler struct {
 
 // ServeHTTP processes the HTTP request and returns the temperature data.
 func (h *WeatherHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Tracer.Start(r.Context(), "WeatherHandler.ServeHTTP")
+	defer span.End()
+
 	cep := r.URL.Query().Get("cep")
-	location, err := h.ZipCodeService.GetLocationByZipCode(cep)
+	location, err := h.ZipCodeService.GetLocationByZipCode(ctx, cep)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"cep":   cep,
@@ -37,13 +41,13 @@ func (h *WeatherHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tempC, err := h.WeatherService.GetTemperatureByLocation(location)
+	tempC, err := h.WeatherService.GetTemperatureByLocation(ctx, location)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	tempF, tempK := h.WeatherService.CalculateTemperature(tempC)
+	tempF, tempK := h.WeatherService.CalculateTemperature(ctx, tempC)
 	temp := dto.Temperature{
 		City:       location,
 		Celsius:    tempC,

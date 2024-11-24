@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+  servicea:
+    build:
+      context: ./servicea
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - serviceb
+      - zipkin
+    networks:
+      - weatherapi
+
+  serviceb:
+    build:
+      context: ./serviceb
+      dockerfile: Dockerfile
+    depends_on:
+      - zipkin
+    env_file:
+      - ./serviceb/.env
+    networks:
+      - weatherapi
+
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - weatherapi
+
+networks:
+  weatherapi:
+    driver: bridge

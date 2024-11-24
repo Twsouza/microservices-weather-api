@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +18,7 @@ func TestGetLocationByZipCode(t *testing.T) {
 
 	service := NewViaCEPService(ts.URL)
 
-	location, err := service.GetLocationByZipCode("12345678")
+	location, err := service.GetLocationByZipCode(context.Background(), "12345678")
 	if err != nil {
 		t.Fatalf("GetLocationByZipCode returned error: %v", err)
 	}

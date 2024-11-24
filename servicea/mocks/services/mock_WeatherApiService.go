@@ -3,6 +3,7 @@
 package services
 
 import (
+	context "context"
 	dto "servicea/internal/dto"
 
 	mock "github.com/stretchr/testify/mock"
@@ -21,9 +22,9 @@ func (_m *MockWeatherApiService) EXPECT() *MockWeatherApiService_Expecter {
 	return &MockWeatherApiService_Expecter{mock: &_m.Mock}
 }
 
-// GetTemperaturesByZipCode provides a mock function with given fields: zipCode
-func (_m *MockWeatherApiService) GetTemperaturesByZipCode(zipCode string) (*dto.WeatherResponse, error) {
-	ret := _m.Called(zipCode)
+// GetTemperaturesByZipCode provides a mock function with given fields: ctx, zipCode
+func (_m *MockWeatherApiService) GetTemperaturesByZipCode(ctx context.Context, zipCode string) (*dto.WeatherResponse, error) {
+	ret := _m.Called(ctx, zipCode)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTemperaturesByZipCode")
@@ -31,19 +32,19 @@ func (_m *MockWeatherApiService) GetTemperaturesByZipCode(zipCode string) (*dto.
 
 	var r0 *dto.WeatherResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*dto.WeatherResponse, error)); ok {
-		return rf(zipCode)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*dto.WeatherResponse, error)); ok {
+		return rf(ctx, zipCode)
 	}
-	if rf, ok := ret.Get(0).(func(string) *dto.WeatherResponse); ok {
-		r0 = rf(zipCode)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *dto.WeatherResponse); ok {
+		r0 = rf(ctx, zipCode)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dto.WeatherResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(zipCode)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, zipCode)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,14 +58,15 @@ type MockWeatherApiService_GetTemperaturesByZipCode_Call struct {
 }
 
 // GetTemperaturesByZipCode is a helper method to define mock.On call
+//   - ctx context.Context
 //   - zipCode string
-func (_e *MockWeatherApiService_Expecter) GetTemperaturesByZipCode(zipCode interface{}) *MockWeatherApiService_GetTemperaturesByZipCode_Call {
-	return &MockWeatherApiService_GetTemperaturesByZipCode_Call{Call: _e.mock.On("GetTemperaturesByZipCode", zipCode)}
+func (_e *MockWeatherApiService_Expecter) GetTemperaturesByZipCode(ctx interface{}, zipCode interface{}) *MockWeatherApiService_GetTemperaturesByZipCode_Call {
+	return &MockWeatherApiService_GetTemperaturesByZipCode_Call{Call: _e.mock.On("GetTemperaturesByZipCode", ctx, zipCode)}
 }
 
-func (_c *MockWeatherApiService_GetTemperaturesByZipCode_Call) Run(run func(zipCode string)) *MockWeatherApiService_GetTemperaturesByZipCode_Call {
+func (_c *MockWeatherApiService_GetTemperaturesByZipCode_Call) Run(run func(ctx context.Context, zipCode string)) *MockWeatherApiService_GetTemperaturesByZipCode_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -74,7 +76,7 @@ func (_c *MockWeatherApiService_GetTemperaturesByZipCode_Call) Return(_a0 *dto.W
 	return _c
 }
 
-func (_c *MockWeatherApiService_GetTemperaturesByZipCode_Call) RunAndReturn(run func(string) (*dto.WeatherResponse, error)) *MockWeatherApiService_GetTemperaturesByZipCode_Call {
+func (_c *MockWeatherApiService_GetTemperaturesByZipCode_Call) RunAndReturn(run func(context.Context, string) (*dto.WeatherResponse, error)) *MockWeatherApiService_GetTemperaturesByZipCode_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"servicea/internal/dto"
 	"servicea/internal/services"
+	"servicea/tracer"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,6 +23,9 @@ type WeatherAPIHandler struct {
 
 // ServeHTTP processes the HTTP request and returns the temperature data.
 func (h *WeatherAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Tracer.Start(r.Context(), "WeatherAPIHandler.ServeHTTP")
+	defer span.End()
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "invalid method", http.StatusMethodNotAllowed)
 		return
@@ -29,12 +33,12 @@ func (h *WeatherAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	req := dto.Request{}
 	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil || !h.ZipCodeService.IsValidCEP(req.Cep) {
+	if err != nil || !h.ZipCodeService.IsValidCEP(ctx, req.Cep) {
 		http.Error(w, InvalidZipCode.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
-	wr, err := h.WeatherService.GetTemperaturesByZipCode(req.Cep)
+	wr, err := h.WeatherService.GetTemperaturesByZipCode(ctx, req.Cep)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"request": req,

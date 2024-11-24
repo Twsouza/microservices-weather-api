@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"serviceb/tracer"
 
 	"github.com/sirupsen/logrus"
 )
@@ -17,7 +19,7 @@ var (
 
 // ZipCodeService defines the interface for fetching location by ZIP code.
 type ZipCodeService interface {
-	GetLocationByZipCode(zipCode string) (string, error)
+	GetLocationByZipCode(ctx context.Context, zipCode string) (string, error)
 }
 
 // ViaCEPService implements ZipCodeService using the ViaCEP API.
@@ -38,7 +40,10 @@ type viaCEPResponse struct {
 }
 
 // GetLocationByZipCode fetches the city name for a given ZIP code.
-func (v *ViaCEPService) GetLocationByZipCode(zipCode string) (string, error) {
+func (v *ViaCEPService) GetLocationByZipCode(ctx context.Context, zipCode string) (string, error) {
+	ctx, span := tracer.Tracer.Start(ctx, "ViaCEPService.GetLocationByZipCode")
+	defer span.End()
+
 	apiURL, err := url.Parse(v.BaseURL)
 	if err != nil {
 		return "", fmt.Errorf("GetLocationByZipCode: error parsing URL: %w", err)

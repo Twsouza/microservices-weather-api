@@ -1,22 +1,85 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
-
+	"os/signal"
 	"servicea/internal/handlers"
 	"servicea/internal/services"
+	"servicea/tracer"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		logrus.Warn("Could not load .env file")
+	if err := run(); err != nil {
+		log.Fatalln(err)
 	}
+}
+
+func run() (err error) {
+	// Handle SIGINT (CTRL+C) gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// Set up OpenTelemetry.
+	otelShutdown, err := tracer.SetupOTelSDK(ctx)
+	if err != nil {
+		return
+	}
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
+	err = godotenv.Load()
+	if err != nil {
+		logrus.Warn("Error loading .env file")
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
+	// Start HTTP server.
+	srv := &http.Server{
+		Addr:         ":" + port,
+		BaseContext:  func(_ net.Listener) context.Context { return ctx },
+		ReadTimeout:  time.Second,
+		WriteTimeout: 10 * time.Second,
+		Handler:      newHTTPHandler(),
+	}
+	srvErr := make(chan error, 1)
+	go func() {
+		srvErr <- srv.ListenAndServe()
+	}()
+
+	// Wait for interruption.
+	select {
+	case err = <-srvErr:
+		// Error when starting HTTP server.
+		return
+	case <-ctx.Done():
+		// Wait for first CTRL+C.
+		// Stop receiving signal notifications as soon as possible.
+		stop()
+	}
+
+	// When Shutdown is called, ListenAndServe immediately returns ErrServerClosed.
+	err = srv.Shutdown(context.Background())
+	return
+}
+
+func newHTTPHandler() http.Handler {
+	mux := http.NewServeMux()
 
 	zipCodeService := services.NewZipCodeService()
 	weatherService := services.NewWeatherAPIService(
@@ -28,12 +91,15 @@ func main() {
 		WeatherService: weatherService,
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8081"
+	handleFunc := func(pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) {
+		handler := otelhttp.WithRouteTag(pattern, http.HandlerFunc(handlerFunc))
+		mux.Handle(pattern, handler)
 	}
 
-	http.Handle("/", weatherAPIHandler)
-	log.Println("Server is running on port", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	// Register handlers.
+	handleFunc("/", weatherAPIHandler.ServeHTTP)
+
+	// Add HTTP instrumentation for the whole server.
+	handler := otelhttp.NewHandler(mux, "/")
+	return handler
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,7 +20,7 @@ func TestGetTemperatureByLocation(t *testing.T) {
 
 	service := NewWeatherAPIService("api-key", server.URL)
 
-	temp, err := service.GetTemperatureByLocation("London")
+	temp, err := service.GetTemperatureByLocation(context.Background(), "London")
 	require.NoError(t, err)
 	assert.Equal(t, 25.0, temp)
 }
@@ -27,7 +28,7 @@ func TestGetTemperatureByLocation(t *testing.T) {
 func TestCalculateTemperature(t *testing.T) {
 	service := &WeatherAPIService{}
 
-	fahrenheit, kelvin := service.CalculateTemperature(25.0)
+	fahrenheit, kelvin := service.CalculateTemperature(context.Background(), 25.0)
 	assert.Equal(t, 77.0, fahrenheit)
 	assert.Equal(t, 298.15, kelvin)
 }

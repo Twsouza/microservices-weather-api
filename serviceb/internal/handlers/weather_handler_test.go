@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestWeatherHandlerServeHTTP(t *testing.T) {
@@ -20,10 +21,10 @@ func TestWeatherHandlerServeHTTP(t *testing.T) {
 
 	t.Run("Valid zipcode", func(t *testing.T) {
 		zipMock := mockServices.NewMockZipCodeService(t)
-		zipMock.EXPECT().GetLocationByZipCode("12345678").Return("São Paulo", nil)
+		zipMock.EXPECT().GetLocationByZipCode(mock.Anything, "12345678").Return("São Paulo", nil)
 		weatherMock := mockServices.NewMockWeatherService(t)
-		weatherMock.EXPECT().GetTemperatureByLocation("São Paulo").Return(celsius, nil)
-		weatherMock.EXPECT().CalculateTemperature(celsius).Return(fahrenheit, kelvin)
+		weatherMock.EXPECT().GetTemperatureByLocation(mock.Anything, "São Paulo").Return(celsius, nil)
+		weatherMock.EXPECT().CalculateTemperature(mock.Anything, celsius).Return(fahrenheit, kelvin)
 		weatherHandler := WeatherHandler{
 			ZipCodeService: zipMock,
 			WeatherService: weatherMock,
@@ -42,7 +43,7 @@ func TestWeatherHandlerServeHTTP(t *testing.T) {
 
 	t.Run("Invalid zipcode", func(t *testing.T) {
 		zipMock := mockServices.NewMockZipCodeService(t)
-		zipMock.EXPECT().GetLocationByZipCode("99999999").Return("", services.InvalidZipCode)
+		zipMock.EXPECT().GetLocationByZipCode(mock.Anything, "99999999").Return("", services.InvalidZipCode)
 		weatherHandler := WeatherHandler{
 			ZipCodeService: zipMock,
 		}
@@ -56,7 +57,7 @@ func TestWeatherHandlerServeHTTP(t *testing.T) {
 
 	t.Run("Zipcode not found", func(t *testing.T) {
 		zipMock := mockServices.NewMockZipCodeService(t)
-		zipMock.EXPECT().GetLocationByZipCode("12345678").Return("", services.ZipCodeNotFound)
+		zipMock.EXPECT().GetLocationByZipCode(mock.Anything, "12345678").Return("", services.ZipCodeNotFound)
 		weatherHandler := WeatherHandler{
 			ZipCodeService: zipMock,
 		}
@@ -70,7 +71,7 @@ func TestWeatherHandlerServeHTTP(t *testing.T) {
 
 	t.Run("Zip code services returns an error", func(t *testing.T) {
 		zipMock := mockServices.NewMockZipCodeService(t)
-		zipMock.EXPECT().GetLocationByZipCode("12345678").Return("", errors.New("error"))
+		zipMock.EXPECT().GetLocationByZipCode(mock.Anything, "12345678").Return("", errors.New("error"))
 		weatherHandler := WeatherHandler{
 			ZipCodeService: zipMock,
 		}
@@ -84,9 +85,9 @@ func TestWeatherHandlerServeHTTP(t *testing.T) {
 
 	t.Run("Weather service returns an error", func(t *testing.T) {
 		zipMock := mockServices.NewMockZipCodeService(t)
-		zipMock.EXPECT().GetLocationByZipCode("12345678").Return("São Paulo", nil)
+		zipMock.EXPECT().GetLocationByZipCode(mock.Anything, "12345678").Return("São Paulo", nil)
 		weatherMock := mockServices.NewMockWeatherService(t)
-		weatherMock.EXPECT().GetTemperatureByLocation("São Paulo").Return(0, errors.New("error"))
+		weatherMock.EXPECT().GetTemperatureByLocation(mock.Anything, "São Paulo").Return(0, errors.New("error"))
 		weatherHandler := WeatherHandler{
 			ZipCodeService: zipMock,
 			WeatherService: weatherMock,
@@ -101,7 +102,7 @@ func TestWeatherHandlerServeHTTP(t *testing.T) {
 
 	t.Run("Invalid request", func(t *testing.T) {
 		zipMock := mockServices.NewMockZipCodeService(t)
-		zipMock.EXPECT().GetLocationByZipCode("").Return("", services.InvalidZipCode)
+		zipMock.EXPECT().GetLocationByZipCode(mock.Anything, "").Return("", services.InvalidZipCode)
 		weatherHandler := WeatherHandler{
 			ZipCodeService: zipMock,
 		}

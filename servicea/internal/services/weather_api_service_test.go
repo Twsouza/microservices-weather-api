@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -62,7 +63,7 @@ func TestGetTemperaturesByZipCode(t *testing.T) {
 			}
 
 			// Call the method
-			_, err := service.GetTemperaturesByZipCode(tc.zipCode)
+			_, err := service.GetTemperaturesByZipCode(context.Background(), tc.zipCode)
 
 			fmt.Printf("Unwrapped error: %v\n", errors.Unwrap(err))
 			fmt.Printf("Expected error: %v\n", tc.expectedError)

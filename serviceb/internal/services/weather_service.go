@@ -1,18 +1,20 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"serviceb/tracer"
 
 	"github.com/sirupsen/logrus"
 )
 
 // WeatherService defines the interface for fetching temperature by location.
 type WeatherService interface {
-	GetTemperatureByLocation(location string) (float64, error)
-	CalculateTemperature(tempC float64) (fahrenheit float64, kelvin float64)
+	GetTemperatureByLocation(ctx context.Context, location string) (float64, error)
+	CalculateTemperature(ctx context.Context, tempC float64) (fahrenheit float64, kelvin float64)
 }
 
 // WeatherAPIService implements WeatherService using the WeatherAPI.
@@ -36,7 +38,10 @@ type weatherAPIResponse struct {
 }
 
 // GetTemperatureByLocation fetches the current temperature for a given location.
-func (w *WeatherAPIService) GetTemperatureByLocation(location string) (float64, error) {
+func (w *WeatherAPIService) GetTemperatureByLocation(ctx context.Context, location string) (float64, error) {
+	ctx, span := tracer.Tracer.Start(ctx, "WeatherAPIService.GetTemperatureByLocation")
+	defer span.End()
+
 	apiURL, err := url.Parse(w.BaseURL)
 	if err != nil {
 		return 0, fmt.Errorf("GetTemperatureByLocation: error parsing base URL: %w", err)
@@ -76,6 +81,9 @@ func (w *WeatherAPIService) GetTemperatureByLocation(location string) (float64, 
 }
 
 // CalculateTemperature converts the temperature from Celsius to Fahrenheit and Kelvin.
-func (w *WeatherAPIService) CalculateTemperature(tempC float64) (float64, float64) {
+func (w *WeatherAPIService) CalculateTemperature(ctx context.Context, tempC float64) (float64, float64) {
+	ctx, span := tracer.Tracer.Start(ctx, "WeatherAPIService.CalculateTemperature")
+	defer span.End()
+
 	return tempC*1.8 + 32, tempC + 273.15
 }
